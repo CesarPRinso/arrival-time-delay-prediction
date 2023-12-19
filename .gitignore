@@ -8,3 +8,5 @@ htmlcov/
 docs/_build/
 dist/
 venv/
+data/spark_applications/
+examples/spark_applications/pagecounts_repartitioned
