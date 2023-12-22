@@ -11,3 +11,5 @@ venv/
 data/spark_applications/
 examples/spark_applications/pagecounts_repartitioned
 config
+.DS_Store
+data/*.csv

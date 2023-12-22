@@ -1,0 +1,229 @@
+Column 'Year' has a single value for all rows. It will be dropped.
+Analysis of the column 'Month':
+  - Data type: IntegerType()
+  - Total values: 2389217
+  - Total unique values: 4
+Unique values:
+1
+2
+3
+4
+
+Analysis of the column 'DayofMonth' (top 10 values):
+ DayofMonth  count
+         21  82225
+         14  82223
+          4  82101
+         25  82045
+         28  81974
+          7  81942
+         18  81902
+         11  81519
+          3  81108
+         24  81087
+
+Analysis of the column 'DayOfWeek':
+  - Data type: IntegerType()
+  - Total values: 2389217
+  - Total unique values: 7
+Unique values:
+1
+6
+3
+5
+4
+7
+2
+
+Analysis of the column 'DepTime' (top 10 values):
+DepTime  count
+     NA  64442
+    600   5733
+    555   5659
+    700   5454
+    655   5004
+    556   4799
+    557   4774
+    558   4610
+    559   4091
+    658   4049
+
+Analysis of the column 'CRSDepTime' (top 10 values):
+ CRSDepTime  count
+        600  46418
+        700  32930
+        800  21921
+        630  20126
+        900  17771
+        730  17728
+       1100  15541
+        830  15339
+       1700  14981
+       1300  14660
+
+Analysis of the column 'CRSArrTime' (top 10 values):
+ CRSArrTime  count
+       1615   8658
+       1930   8618
+       1600   8340
+       1130   8191
+       2040   8183
+       1220   8037
+       2005   7964
+       1235   7860
+       1230   7851
+       1630   7844
+
+Analysis of the column 'UniqueCarrier' (top 10 values):
+UniqueCarrier  count
+           WN 398966
+           AA 204519
+           OO 195184
+           MQ 167860
+           UA 154036
+           US 153539
+           DL 151409
+           XE 138757
+           NW 122799
+           CO 102702
+
+Analysis of the column 'FlightNum' (top 10 values):
+ FlightNum  count
+       511   1758
+        16   1702
+       118   1631
+        73   1584
+        43   1577
+        12   1575
+        62   1540
+       308   1529
+       152   1524
+         2   1520
+
+Analysis of the column 'TailNum' (top 10 values):
+TailNum  count
+   None  42452
+ N693BR   1526
+ N646BR   1505
+ N476HA   1490
+ N485HA   1441
+ N486HA   1439
+ N484HA   1425
+ N487HA   1418
+ N475HA   1411
+ N651BR   1292
+
+Analysis of the column 'CRSElapsedTime' (top 10 values):
+CRSElapsedTime  count
+            75  63487
+            65  60572
+            70  58936
+            80  56604
+            85  55667
+            60  50488
+            90  43281
+           105  36267
+           100  36065
+           110  34544
+
+Analysis of the column 'ArrDelay' (top 10 values):
+ArrDelay  count
+      NA  70096
+      -5  68667
+      -6  68260
+      -4  67245
+      -7  66744
+      -3  65553
+      -8  65299
+      -2  64145
+      -9  63184
+       0  62267
+
+Analysis of the column 'DepDelay' (top 10 values):
+DepDelay  count
+       0 181640
+      -5 170630
+      -3 157050
+      -2 155630
+      -4 152068
+      -1 145863
+      -6  98150
+       1  77889
+      -7  76274
+      NA  64442
+
+Analysis of the column 'Origin' (top 10 values):
+Origin  count
+   ATL 137014
+   ORD 118008
+   DFW  93041
+   DEN  78384
+   LAX  73480
+   PHX  69404
+   IAH  62549
+   LAS  59653
+   DTW  56180
+   EWR  48938
+
+Analysis of the column 'Dest' (top 10 values):
+Dest  count
+ ATL 136950
+ ORD 118011
+ DFW  93077
+ DEN  78417
+ LAX  73514
+ PHX  69397
+ IAH  62537
+ LAS  59657
+ DTW  56176
+ EWR  48941
+
+Analysis of the column 'Distance' (top 10 values):
+ Distance  count
+      337  14758
+      214  11407
+      109  11092
+      256  10644
+      403  10392
+      296  10322
+      370  10237
+      223  10151
+      861   9504
+      533   9154
+
+Analysis of the column 'TaxiOut' (top 10 values):
+TaxiOut  count
+     10 166323
+     11 164586
+     12 161168
+     13 152263
+      9 150309
+     14 141029
+     15 128519
+      8 126173
+     16 113399
+     17  99497
+
+Analysis of the column 'Cancelled':
+  - Data type: IntegerType()
+  - Total values: 2389217
+  - Total unique values: 2
+Unique values:
+1
+0
+
+Analysis of the column 'CancellationCode':
+CancellationCode   count
+            None 2324775
+               B   25744
+               C   12617
+               A   26075
+               D       6
+Total unique values: 5
+Unique values:
+B
+C
+A
+D
+None
+
