@@ -11,18 +11,15 @@ def analysis_file(cleaned_df):
     output_file = "column_analysis.txt"
     # Open the file in write mode
     with open(output_file, "w") as file:
-        for column_name in cleaned_df.columns:
+        columns_to_analyze = [col_name for col_name in cleaned_df.columns if col_name not in ['ArrDelay', 'DepDelay']]
+
+        for column_name in columns_to_analyze:
             data_type = cleaned_df.schema[column_name].dataType
 
             # Get the distinct values for the column
             distinct_values_count = cleaned_df.select(column_name).distinct().count()
 
-            if distinct_values_count <= 1:
-                # Column has a single value, write to file and drop the column
-                file.write(f"Column '{column_name}' has a single value for all rows. It will be dropped.\n")
-                cleaned_df = cleaned_df.drop(column_name)
-
-            elif distinct_values_count <= 10:
+            if distinct_values_count <= 10:
                 file.write(f"Analysis of the column '{column_name}':\n")
 
                 if isinstance(data_type, StringType):
@@ -57,7 +54,7 @@ def analysis_file(cleaned_df):
                     file.write("\n")
             else:
                 file.write(f"Analysis of the column '{column_name}' (top 10 values):\n")
-                top_values = cleaned_df.groupBy(column_name).count().orderBy(col("count").desc()).limit(10)
+                top_values = cleaned_df.groupBy(column_name).count().orderBy(col(column_name).desc()).limit(10)
                 file.write(top_values.toPandas().to_string(index=False) + "\n\n")
 
     # Print the file path
@@ -89,7 +86,7 @@ def delete(raw_df):
         "Year"
     ]
 
-    filtered_df = raw_df.select([col for col in raw_df.columns if col not in columns_to_drop])
+    filtered_df = cleaned_df.select([col for col in cleaned_df.columns if col not in columns_to_drop])
     filtered_df.printSchema()
     return filtered_df
 
@@ -119,13 +116,13 @@ def read_file(file_path, spark):
     }
 
     raw_df = spark.read.options(**csv_options).csv(file_path)
-    # raw_df = spark.read.csv(file_path)
-    print(raw_df.show(5))
+    raw_df = raw_df.replace("NULL", None)
 
     cleaned_df = delete(raw_df)
-    # cleaned_df = analysis_file(cleaned_df)
+    cleaned_df = analysis_file(cleaned_df)
 
     print("Schema of the DataFrame:")
     cleaned_df.printSchema()
-
+    # cleaned_df = cleaned_df.na.drop()
+    print(cleaned_df.show(5))
     return cleaned_df
