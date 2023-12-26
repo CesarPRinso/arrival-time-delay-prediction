@@ -1,6 +1,5 @@
 from pyspark.sql import SparkSession
 import bz2
-import pandas as pd
 from pyspark.sql import functions as F
 from pyspark.sql.connect.functions import when
 from pyspark.sql.types import StringType
