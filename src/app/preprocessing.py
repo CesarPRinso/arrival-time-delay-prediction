@@ -2,15 +2,13 @@
 
 from pyspark.sql import functions as F
 from pyspark.sql.functions import col, sum as spark_sum, mean as _mean
-from pyspark.ml.feature import VectorAssembler, StringIndexer, OneHotEncoder, MinMaxScaler, PCA
-from pyspark.ml import Pipeline
-from pyspark.ml.stat import Correlation
+from pyspark.ml.feature import VectorAssembler, StringIndexer, OneHotEncoder, MinMaxScaler, PCA, Word2Vec
 from pyspark.sql.types import StringType, IntegerType, DoubleType
-import matplotlib.pyplot as plt
-import seaborn as sns
+from pyspark.ml import Pipeline
+from functools import reduce
 
-def overview (file_path, spark):
 
+def overview(file_path, spark):
     # Read the raw file
     csv_options = {
         "header": True,
@@ -27,11 +25,13 @@ def overview (file_path, spark):
 
     return raw_df
 
+
 def clean(raw_df):
     # Remove forbidden and unuseful variables
     df_drop = raw_df.drop(
         *['ArrTime', 'ActualElapsedTime', 'AirTime', 'TaxiIn', 'Diverted', 'CarrierDelay', 'WeatherDelay', 'NASDelay',
-          'SecurityDelay', 'LateAircraftDelay','UniqueCarrier', 'TailNum','Cancelled','CancellationCode','CRSDepTime'])
+          'SecurityDelay', 'LateAircraftDelay', 'UniqueCarrier', 'TailNum', 'Cancelled', 'CancellationCode',
+          'CRSDepTime'])
     print("Number of columns after removing the forbidden variables: ", len(df_drop.columns))
     return df_drop
 
@@ -49,6 +49,7 @@ def see_null(df):
     null_counts.show()
     return df
 
+
 def remove_one(df):
     # Some variables have only one valid value, so we will remove them.
     df_drop_one = df
@@ -60,6 +61,7 @@ def remove_one(df):
     print("Number of columns after removing one value variables: ", len(df_drop_one.columns))
     return df_drop_one
 
+
 def remove_instances(df):
     # Remove instances where target variable is a missing value.
     df_arr_delay = df.filter(df.ArrDelay != "NA")
@@ -70,6 +72,7 @@ def remove_instances(df):
     df_arr_delay.printSchema()
     df_arr_delay.count()
     return df_arr_delay
+
 
 def variable_type(df):
     # Change variable types
@@ -95,7 +98,8 @@ def variable_type(df):
     df_cat.printSchema()
     return df_cat
 
-def count_missing(spark_df,sort=True):
+
+def count_missing(spark_df, sort=True):
     df = spark_df.select([F.count(F.when(F.isnull(c), c)).alias(c) for (c, c_type) in spark_df.dtypes]).toPandas()
     if len(df) == 0:
         print("There are no any missing values!")
@@ -103,6 +107,7 @@ def count_missing(spark_df,sort=True):
     if sort:
         return df.rename(index={0: 'count'}).T.sort_values("count", ascending=False)
     return df
+
 
 def fill_missing(df):
     # If the number of missing values is over 70%, the variable is removed.
@@ -129,7 +134,7 @@ def fill_missing(df):
     print("We have numerical variables: ", numCols)
     print("")
     print("These columns are going to be filled as follows:")
-    print("- Categorical values: with 0.") # check how to fill
+    print("- Categorical values: with 0.")  # check how to fill
     print("- Numerical values: with the mean of the column.")
     print("")
 
@@ -150,7 +155,8 @@ def fill_missing(df):
     print(n_missings)
     return clean_df
 
-def correlation(df,spark):
+
+def correlation(df, spark):
     intCols = [x for (x, dataType) in df.dtypes if dataType == "int"]
     corr = []
     for i in intCols:
@@ -169,6 +175,7 @@ def correlation(df,spark):
     # ax.set(title="correlation between variables and arrdelay")
     # plt.xticks(rotation=45, ha='right')
     # plt.show()
+
 
 def contingency_table(df):
     catCols = [x for (x, dataType) in df.dtypes if dataType == "string"]
@@ -212,8 +219,54 @@ def one_hot_encode(df):
     notStringCols = [x for (x, dataType) in df_encoded.dtypes if ((dataType != "string") and (dataType != "double"))]
     df_encoded_clean = df_encoded.select([col for col in notStringCols])
     print("Let's see how the data set looks like after one-hot encoding:")
-    #df_encoded_clean.printSchema()
+    # df_encoded_clean.printSchema()
     return df_encoded_clean
+
+
+def embeddings_encode(df):
+    print("Transforming categorical variables using embeddings...")
+
+    # Obtener las columnas categóricas
+    cat_cols = [x for (x, data_type) in df.dtypes if data_type == "string"]
+    print("Variables to be transformed:", cat_cols)
+
+    # Crear Word2Vec para cada columna categórica
+    word2vec_models = [
+        Word2Vec(vectorSize=5, minCount=1, inputCol=col, outputCol=f"{col}_embedding")
+        for col in cat_cols
+    ]
+
+    # Crear el pipeline y ajustar al conjunto de datos
+    pipeline = Pipeline(stages=word2vec_models)
+    model = pipeline.fit(df)
+    df_embedded = model.transform(df)
+
+    # Seleccionar solo las columnas deseadas
+    selected_cols = [c for c in df.columns if c not in cat_cols]  # Columnas originales
+    selected_cols += [f"{col}_embedding" for col in cat_cols]  # Columnas embeddings
+
+    # Seleccionar solo las columnas deseadas en el DataFrame resultante
+    df_result = df_embedded.select(selected_cols)
+
+    return df_result
+
+
+def string_indexer_and_join(df):
+    cat_cols = [x for (x, data_type) in df.dtypes if data_type == "string"]
+    indexed_dfs = []
+
+    for col_name in cat_cols:
+        indexer = StringIndexer(inputCol=col_name, outputCol=f"{col_name}_cat")
+        indexed_df = indexer.fit(df).transform(df).select(indexer.getOutputCol())
+        indexed_dfs.append(indexed_df)
+
+    join_columns = reduce(lambda df1, df2: df1.join(df2), indexed_dfs)
+    result_df = df.crossJoin(join_columns)
+
+    result_df = result_df.drop(*cat_cols)
+
+    return result_df
+
 
 def pca(df):
     # Lista de columnas que deseas incluir en el PCA
@@ -240,6 +293,7 @@ def pca(df):
 
     return df_pca
 
+
 def preprocess(file_path, spark):
     # Step 1: Read the original dataframe
     df = overview(file_path, spark)
@@ -265,9 +319,9 @@ def preprocess(file_path, spark):
     df_clean2.printSchema()
 
     # Step 8: Use one-hot encoding to transform categorical variables
-    df_onehot = one_hot_encode(df_clean2)
-    #print(df_onehot.show(5))
-    #df_onehot.printSchema()
+    df_onehot = string_indexer_and_join(df_clean2)
+    # print(df_onehot.show(5))
+    # df_onehot.printSchema()
 
     # Step 9. PCA analysis
     df_pca = pca(df_onehot)
@@ -275,10 +329,7 @@ def preprocess(file_path, spark):
     df_pca.printSchema()
 
     # Correlation analysis
-    #correlation(df_onehot,spark)
+    # correlation(df_onehot,spark)
     # contingency_table(df_clean2)
 
     return df_pca
-
-
-
