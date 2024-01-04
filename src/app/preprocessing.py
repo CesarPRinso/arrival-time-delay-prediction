@@ -263,6 +263,8 @@ def string_indexer_and_join(df):
         if col_name != index_col_name and df.select(col_name).dtypes[0][1] == "string":
             indexed_df = indexed_df.drop(col_name)
 
+    indexed_df = indexed_df.drop(index_col_name)
+
     return indexed_df
 
 
