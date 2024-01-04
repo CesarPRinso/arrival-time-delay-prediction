@@ -284,20 +284,45 @@ def pca(df):
 
 
 def preprocess(file_path, spark):
+    # Step 1: Read the original dataframe
     df = overview(file_path, spark)
 
+    # Step 2: Clean the dataframe
     df_cleaned = clean(df)
+
+    # Step 3: See if there are null instances
     df_without_null = see_null(df_cleaned)
+
+    # Step 4: Remove variables with one value
+    # df_without_one = remove_one(df_without_null)
+
+    # Step 5: Remove instances where target variable is a missing value
     df_without_null_inst = remove_instances(df_without_null)
+
+    # Step 6: Cast variable types
     df_type = variable_type(df_without_null_inst)
+
+    # Step 7: Check missing values and fill them
     df_clean2 = fill_missing(df_type)
-    # print(df_clean2.show(5))
+    print(df_clean2.show(5))
     df_clean2.printSchema()
+
+    # Step 8: Use one-hot encoding to transform categorical variables
     df_onehot = string_indexer_and_join(df_clean2)
+    # print(df_onehot.show(5))
+    # df_onehot.printSchema()
+    # Convert Spark DataFrame to Pandas DataFrame
     pandas_df_onehot = df_onehot.toPandas()
+    # Save Pandas DataFrame as CSV locally
     pandas_df_onehot.to_csv('dataOneHot.csv', index=False)
+
+    # Step 9. PCA analysis
     df_pca = pca(df_onehot)
-    # print(df_pca.show(5))
+    print(df_pca.show(5))
     df_pca.printSchema()
+
+    # Correlation analysis
+    # correlation(df_onehot,spark)
+    # contingency_table(df_clean2)
 
     return df_pca
