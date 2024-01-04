@@ -6,6 +6,7 @@ from pyspark.ml.feature import VectorAssembler, StringIndexer, OneHotEncoder, Mi
 from pyspark.sql.types import StringType, IntegerType, DoubleType
 from pyspark.ml import Pipeline
 from functools import reduce
+from pyspark.sql.functions import monotonically_increasing_id
 
 
 def overview(file_path, spark):
@@ -15,13 +16,14 @@ def overview(file_path, spark):
         "inferSchema": True,
         "delimiter": ",",
     }
-    raw_df = spark.read.options(**csv_options).csv(file_path)
+    raw_df = spark.read.options(**csv_options).csv(file_path).repartition(10)
 
     print("Overview of the original dataset:")
     print("Number of instances: ", raw_df.count())
     print("Number of columns: ", len(raw_df.columns))
     print("Name and type of each variable:")
     raw_df.printSchema()
+    raw_df.persist()
 
     return raw_df
 
@@ -225,18 +227,12 @@ def one_hot_encode(df):
 
 def embeddings_encode(df):
     print("Transforming categorical variables using embeddings...")
-
-    # Obtener las columnas categóricas
     cat_cols = [x for (x, data_type) in df.dtypes if data_type == "string"]
     print("Variables to be transformed:", cat_cols)
-
-    # Crear Word2Vec para cada columna categórica
     word2vec_models = [
         Word2Vec(vectorSize=5, minCount=1, inputCol=col, outputCol=f"{col}_embedding")
         for col in cat_cols
     ]
-
-    # Crear el pipeline y ajustar al conjunto de datos
     pipeline = Pipeline(stages=word2vec_models)
     model = pipeline.fit(df)
     df_embedded = model.transform(df)
@@ -252,84 +248,56 @@ def embeddings_encode(df):
 
 
 def string_indexer_and_join(df):
-    cat_cols = [x for (x, data_type) in df.dtypes if data_type == "string"]
-    indexed_dfs = []
+    index_col_name = "index"
+    df = df.withColumn(index_col_name, F.monotonically_increasing_id())
 
-    for col_name in cat_cols:
-        indexer = StringIndexer(inputCol=col_name, outputCol=f"{col_name}_cat")
-        indexed_df = indexer.fit(df).transform(df).select(indexer.getOutputCol())
-        indexed_dfs.append(indexed_df)
+    indexed_df = df
 
-    join_columns = reduce(lambda df1, df2: df1.join(df2), indexed_dfs)
-    result_df = df.crossJoin(join_columns)
+    for col_name in df.columns:
+        if col_name != index_col_name and df.select(col_name).dtypes[0][1] == "string":
+            indexer = StringIndexer(inputCol=col_name, outputCol=f"{col_name}_cat")
+            indexed_df = indexer.fit(indexed_df).transform(indexed_df)
 
-    result_df = result_df.drop(*cat_cols)
 
-    return result_df
+    for col_name in df.columns:
+        if col_name != index_col_name and df.select(col_name).dtypes[0][1] == "string":
+            indexed_df = indexed_df.drop(col_name)
+
+    return indexed_df
 
 
 def pca(df):
-    # Lista de columnas que deseas incluir en el PCA
     columns_for_pca = [col for col in df.columns if col != 'ArrDelay']
 
-    # VectorAssembler para combinar las características one-hot en un solo vector
     assembler = VectorAssembler(
         inputCols=columns_for_pca,
         outputCol="features"
     )
 
-    # Aplicar PCA
     pca = PCA(k=2, inputCol="features", outputCol="pca_features")
-
-    # Crear el pipeline
     pipeline = Pipeline(stages=[assembler, pca])
-
-    # Ajustar y transformar el pipeline
     model = pipeline.fit(df)
     df_pca = model.transform(df)
-
-    # Seleccionar las columnas necesarias
     df_pca = df_pca.select("*", "pca_features", "ArrDelay")
 
     return df_pca
 
 
 def preprocess(file_path, spark):
-    # Step 1: Read the original dataframe
     df = overview(file_path, spark)
 
-    # Step 2: Clean the dataframe
     df_cleaned = clean(df)
-
-    # Step 3: See if there are null instances
     df_without_null = see_null(df_cleaned)
-
-    # Step 4: Remove variables with one value
-    # df_without_one = remove_one(df_without_null)
-
-    # Step 5: Remove instances where target variable is a missing value
     df_without_null_inst = remove_instances(df_without_null)
-
-    # Step 6: Cast variable types
     df_type = variable_type(df_without_null_inst)
-
-    # Step 7: Check missing values and fill them
     df_clean2 = fill_missing(df_type)
-    print(df_clean2.show(5))
+    # print(df_clean2.show(5))
     df_clean2.printSchema()
-
-    # Step 8: Use one-hot encoding to transform categorical variables
     df_onehot = string_indexer_and_join(df_clean2)
-    # print(df_onehot.show(5))
-    # df_onehot.printSchema()
-
-    # Step 9. PCA analysis
+    pandas_df_onehot = df_onehot.toPandas()
+    pandas_df_onehot.to_csv('dataOneHot.csv', index=False)
     df_pca = pca(df_onehot)
-    print(df_pca.show(5))
+    # print(df_pca.show(5))
     df_pca.printSchema()
-
-    # Correlation analysis
-    # correlation(df_onehot,spark)
-    # contingency_table(df_clean2)
 
     return df_pca

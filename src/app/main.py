@@ -10,5 +10,11 @@ import os
 if __name__ == '__main__':
     log = logging.getLogger("pyspark")
     log.setLevel(logging.ERROR)
-    spark = SparkSession.builder.config("spark.jars", "postgresql-42.6.0.jar").master('local[4]').getOrCreate()
+    spark = SparkSession.builder \
+        .config("spark.jars", "postgresql-42.6.0.jar") \
+        .config("spark.executor.memory", "4g") \
+        .config("spark.executor.cores", "4") \
+        .config("spark.cores.max", "4") \
+        .master('local[4]') \
+        .getOrCreate()
     preprocess('../data/2008.csv.bz2', spark)
