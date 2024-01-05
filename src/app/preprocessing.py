@@ -193,7 +193,6 @@ def contingency_table(df):
 
     contingency_table.show()
 
-
 def one_hot_encode(df):
     print("Transforming categorical variables using one-hot encoding...")
     catCols = [x for (x, dataType) in df.dtypes if dataType == "string"]
@@ -267,7 +266,7 @@ def string_indexer_and_join(df):
 
     return indexed_df
 
-
+'''
 def pca(df):
     columns_for_pca = [col for col in df.columns if col != 'ArrDelay']
 
@@ -283,6 +282,7 @@ def pca(df):
     df_pca = df_pca.select("*", "pca_features", "ArrDelay")
 
     return df_pca
+'''
 
 
 def preprocess(file_path, spark):
@@ -314,17 +314,22 @@ def preprocess(file_path, spark):
     # print(df_onehot.show(5))
     # df_onehot.printSchema()
     # Convert Spark DataFrame to Pandas DataFrame
-    pandas_df_onehot = df_onehot.toPandas()
+    #pandas_df_onehot = df_onehot.toPandas()
     # Save Pandas DataFrame as CSV locally
-    pandas_df_onehot.to_csv('dataOneHot.csv', index=False)
+    #pandas_df_onehot.to_csv('dataOneHot.csv', index=False)
 
+    '''
     # Step 9. PCA analysis
     df_pca = pca(df_onehot)
     print(df_pca.show(5))
     df_pca.printSchema()
-
+    # Convert Spark DataFrame to Pandas DataFrame
+    pandas_dfcpca = df_pca.toPandas()
+    # Save Pandas DataFrame as CSV locally
+    pandas_dfcpca.to_csv('dataPCA.csv', index=False)
+    '''
     # Correlation analysis
     # correlation(df_onehot,spark)
     # contingency_table(df_clean2)
 
-    return df_pca
+    return df_onehot
