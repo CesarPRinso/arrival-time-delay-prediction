@@ -13,3 +13,4 @@ examples/spark_applications/pagecounts_repartitioned
 config
 .DS_Store
 data/*.csv
+parquet
