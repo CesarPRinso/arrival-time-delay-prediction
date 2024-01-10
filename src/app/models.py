@@ -79,7 +79,7 @@ def CVreg_tree(df_train):
     hyperparamGrid = (
         ParamGridBuilder()
         .addGrid(dtr.maxDepth, [3, 5, 7, 10])  # default = 5
-        .addGrid(dtr.maxBins, [32, 35, 40])  # default = 32
+        .addGrid(dtr.maxBins, [32, 35, 40]) #default = 32
         .addGrid(dtr.minInstancesPerNode, [1, 3, 5, 7])  # default = 1
         .addGrid(dtr.minInfoGain, [0.0, 0.2])  # default = 0.0
         .build()

@@ -2,11 +2,12 @@
 
 from pyspark.sql import functions as F
 from pyspark.sql.functions import col, sum as spark_sum, mean as _mean
-from pyspark.ml.feature import VectorAssembler, StringIndexer, OneHotEncoder, MinMaxScaler, PCA, Word2Vec
+from pyspark.ml.feature import StringIndexer, OneHotEncoder, MinMaxScaler, PCA, Word2Vec, VectorIndexer
 from pyspark.sql.types import StringType, IntegerType, DoubleType
 from pyspark.ml import Pipeline
 from functools import reduce
 from pyspark.sql.functions import monotonically_increasing_id
+from pyspark.ml.feature import Bucketizer
 
 
 def overview(file_path, spark):
@@ -193,6 +194,7 @@ def contingency_table(df):
 
     contingency_table.show()
 
+
 def one_hot_encode(df):
     print("Transforming categorical variables using one-hot encoding...")
     catCols = [x for (x, dataType) in df.dtypes if dataType == "string"]
@@ -236,11 +238,8 @@ def embeddings_encode(df):
     model = pipeline.fit(df)
     df_embedded = model.transform(df)
 
-    # Seleccionar solo las columnas deseadas
-    selected_cols = [c for c in df.columns if c not in cat_cols]  # Columnas originales
-    selected_cols += [f"{col}_embedding" for col in cat_cols]  # Columnas embeddings
-
-    # Seleccionar solo las columnas deseadas en el DataFrame resultante
+    selected_cols = [c for c in df.columns if c not in cat_cols]
+    selected_cols += [f"{col}_embedding" for col in cat_cols]
     df_result = df_embedded.select(selected_cols)
 
     return df_result
@@ -257,7 +256,6 @@ def string_indexer_and_join(df):
             indexer = StringIndexer(inputCol=col_name, outputCol=f"{col_name}_cat")
             indexed_df = indexer.fit(indexed_df).transform(indexed_df)
 
-
     for col_name in df.columns:
         if col_name != index_col_name and df.select(col_name).dtypes[0][1] == "string":
             indexed_df = indexed_df.drop(col_name)
@@ -265,6 +263,7 @@ def string_indexer_and_join(df):
     indexed_df = indexed_df.drop(index_col_name)
 
     return indexed_df
+
 
 '''
 def pca(df):
@@ -283,6 +282,33 @@ def pca(df):
 
     return df_pca
 '''
+
+from pyspark.ml.feature import Bucketizer
+from pyspark.sql.functions import col
+
+def apply_bucketizer(df, input_col, splits):
+    """
+    Applies Bucketizer to a specific column in a PySpark DataFrame.
+
+    Parameters:
+    - df: PySpark DataFrame.
+    - input_col: Name of the column to which Bucketizer will be applied.
+    - splits: List of bin boundaries.
+
+    Returns:
+    - Modified DataFrame with a new column resulting from Bucketizer.
+    """
+    # Create a Bucketizer object
+    bucketizer = Bucketizer(splits=splits, inputCol=input_col, outputCol=f"{input_col}_bucketized")
+
+    # Apply Bucketizer to the DataFrame and create a new bucketized column
+    df = bucketizer.transform(df)
+
+    # Replace the original column with the new bucketized column
+    df = df.withColumn(input_col, F.col(f"{input_col}_bucketized")).drop(f"{input_col}_bucketized")
+
+    return df
+
 
 
 def preprocess(file_path, spark):
@@ -311,12 +337,16 @@ def preprocess(file_path, spark):
 
     # Step 8: Use one-hot encoding to transform categorical variables
     df_onehot = string_indexer_and_join(df_clean2)
+    splits_taxi_out = [float('-inf'), 10, 20, float('inf')]
+    df_onehot = apply_bucketizer(df_onehot, 'TaxiOut', splits_taxi_out)
+    df_onehot = apply_bucketizer(df_onehot, 'Origin_cat', splits_taxi_out)
+    df_onehot = apply_bucketizer(df_onehot, 'Dest_cat', splits_taxi_out)
     # print(df_onehot.show(5))
     # df_onehot.printSchema()
     # Convert Spark DataFrame to Pandas DataFrame
-    #pandas_df_onehot = df_onehot.toPandas()
+    # pandas_df_onehot = df_onehot.toPandas()
     # Save Pandas DataFrame as CSV locally
-    #pandas_df_onehot.to_csv('dataOneHot.csv', index=False)
+    # pandas_df_onehot.to_csv('dataOneHot.csv', index=False)
 
     '''
     # Step 9. PCA analysis
