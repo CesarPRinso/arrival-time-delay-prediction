@@ -1,13 +1,13 @@
-from pyspark.ml import Pipeline
+import sys
+sys.path.append("..")
 from pyspark.sql import SparkSession
-from pyspark.sql import Row
 import logging
 from preprocessing import preprocess
-from models import modelTuning
 # from src.app.utils import read_file, unzip_file, check_delimiter
-from utils import read_file, unzip_file, check_delimiter
 import os
 import time
+
+from src.app.model.models import modelTuning
 
 
 def get_spark_session():
@@ -19,7 +19,8 @@ def get_spark_session():
         .config("spark.executor.memory", "16g") \
         .config("spark.executor.cores", "16") \
         .config("spark.cores.max", "16") \
-        .master('local[4]') \
+        .config("spark.ui.reverseProxy", "true") \
+        .master('local[8]') \
         .getOrCreate()
     return spark
 
@@ -72,6 +73,7 @@ def write_to_parquet(dataframe, parquet_output_folder):
 
 if __name__ == '__main__':
     # Set up logging to display only error messages for PySpark
+    print('..... start')
     log = logging.getLogger("pyspark")
     log.setLevel(logging.ERROR)
 
@@ -87,3 +89,4 @@ if __name__ == '__main__':
 
     # Call the modelTuning function with the combined data and Spark session
     modelTuning(combined_data, spark)
+    spark.stop()

@@ -286,6 +286,7 @@ def pca(df):
 from pyspark.ml.feature import Bucketizer
 from pyspark.sql.functions import col
 
+
 def apply_bucketizer(df, input_col, splits):
     """
     Applies Bucketizer to a specific column in a PySpark DataFrame.
@@ -308,7 +309,6 @@ def apply_bucketizer(df, input_col, splits):
     df = df.withColumn(input_col, F.col(f"{input_col}_bucketized")).drop(f"{input_col}_bucketized")
 
     return df
-
 
 
 def preprocess(file_path, spark):
@@ -338,7 +338,7 @@ def preprocess(file_path, spark):
     # Step 8: Use one-hot encoding to transform categorical variables
     df_onehot = string_indexer_and_join(df_clean2)
     splits_taxi_out = [float('-inf'), 10, 20, float('inf')]
-    df_onehot = apply_bucketizer(df_onehot, 'TaxiOut', splits_taxi_out)
+    # df_onehot = apply_bucketizer(df_onehot, 'TaxiOut', splits_taxi_out)
     df_onehot = apply_bucketizer(df_onehot, 'Origin_cat', splits_taxi_out)
     df_onehot = apply_bucketizer(df_onehot, 'Dest_cat', splits_taxi_out)
     # print(df_onehot.show(5))
