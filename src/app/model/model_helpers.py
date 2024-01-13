@@ -31,12 +31,8 @@ def split_train_test(dataframe, train_ratio, spark) :
     # Randomly split into train and test
     current_dir = os.path.dirname(os.path.abspath(__file__))
     src_dir = os.path.abspath(os.path.join(current_dir, '../../'))
-    print("src_dir")
-    print(src_dir)
     parquet_dir = os.path.join(src_dir, 'parquet')
-    print(parquet_dir)
     parquet_path = os.path.join(parquet_dir, 'combined_data.parquet')
-    print(parquet_path)
     dataframe = spark.read.parquet(parquet_path)
 
     splits = dataframe.randomSplit([train_ratio, 1.0 - train_ratio], seed=7)

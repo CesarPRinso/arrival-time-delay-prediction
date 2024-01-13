@@ -9,6 +9,7 @@ from src.app.model.model_helpers import split_train_test, vector_assembler, prep
 from pyspark import SparkContext
 import time
 
+
 # ----------------------------------------------------------------------------------
 #                               MAIN FUNCTION                                     |
 # ----------------------------------------------------------------------------------
@@ -30,9 +31,9 @@ def parallelize_tasks(transformations, spark):
         return None
 
 
-def modelTuning(df, spark):
+def modelTuning(Adf_train, Adf_test, feature_cols, spark):
     # Step 1 and Step 2:
-    Adf_train, Adf_test, feature_cols = prepare_data(df, spark)
+
     start_time_dt = time.time()
     train_decision_tree(Adf_train, Adf_test, feature_cols, spark)
     elapsed_time_dt = (time.time() - start_time_dt) / 60
@@ -47,3 +48,16 @@ def modelTuning(df, spark):
     train_adaboost(Adf_train, Adf_test, feature_cols, spark)
     elapsed_time_ab = (time.time() - start_time_ab) / 60
     print(f"AdaBoost Training Time: {elapsed_time_ab} minutes")
+
+
+def compile_models(df, selected_model, spark):
+    Adf_train, Adf_test, feature_cols = prepare_data(df, spark)
+    if selected_model == 1:
+        train_decision_tree(Adf_train, Adf_test, feature_cols, spark)
+    elif selected_model == 2:
+        train_random_forest(Adf_train, Adf_test, feature_cols, spark)
+    elif selected_model == 3:
+        train_adaboost(Adf_train, Adf_test, feature_cols, spark)
+    elif selected_model == 4:
+        # Train all models
+        modelTuning(Adf_train, Adf_test, feature_cols, spark)

@@ -32,7 +32,7 @@ def train_decision_tree(Adf_train, Adf_test, feature_cols, spark):
     names_df.show()
 
     # Get the feature importances
-    plot_feature_importances(dtr_CVmodel, feature_cols, plot_title='Regression Decision Tree Feature Importances')
+    # plot_feature_importances(dtr_CVmodel, feature_cols, plot_title='Regression Decision Tree Feature Importances')
 
     # Obtain the best hyperparameters
     print("Best Hyper-Parameters of Decision Tree")

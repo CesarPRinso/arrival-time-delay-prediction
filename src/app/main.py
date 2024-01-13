@@ -1,6 +1,6 @@
 import sys
 
-from app.model.models import modelTuning
+from app.model.models import modelTuning, compile_models
 
 sys.path.append("..")
 from pyspark.sql import SparkSession
@@ -76,19 +76,26 @@ if __name__ == '__main__':
     print('..... start')
     log = logging.getLogger("pyspark")
     log.setLevel(logging.ERROR)
+    if len(sys.argv) > 1:
+        selected_model = int(sys.argv[1])
+        if selected_model in [1, 2, 3, 4]:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            folder_path = os.path.join(current_dir, '../data')
+            parquet_output_folder = os.path.join(current_dir, '../parquet')
 
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    folder_path = os.path.join(current_dir, '../data')
-    parquet_output_folder = os.path.join(current_dir, '../parquet')
-
-    # Create a Spark session using a utility function
-    spark = get_spark_session()
-    start_time = time.time()
-    combined_data = load_files(folder_path)
-    write_to_parquet(combined_data, parquet_output_folder)
-    elapsed_time = time.time() - start_time
-    print(f"Execution time: {elapsed_time} seconds")
-
-    # Call the modelTuning function with the combined data and Spark session
-    modelTuning(combined_data, spark)
-    spark.stop()
+            # Create a Spark session using a utility function
+            spark = get_spark_session()
+            start_time = time.time()
+            combined_data = load_files(folder_path)
+            write_to_parquet(combined_data, parquet_output_folder)
+            elapsed_time = time.time() - start_time
+            print(f"Execution time: {elapsed_time} seconds")
+            # Call the modelTuning function with the combined data and Spark session
+            compile_models(combined_data, selected_model, spark)
+            spark.stop()
+        else:
+            # Invalid option, prompt the user to enter a valid option
+            print("Invalid option. Please provide a valid option (1, 2, 3, or 4) for model training.")
+    else:
+        # No option provided, prompt the user to enter a valid option
+        print("No option provided. Please provide a valid option (1, 2, 3, or 4) for model training.")
