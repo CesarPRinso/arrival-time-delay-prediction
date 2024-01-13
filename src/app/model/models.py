@@ -7,7 +7,7 @@ from src.app.model.ensemble_methods import train_decision_tree, train_random_for
 from src.app.model.hyper_parameter_optimizer import CVreg_tree
 from src.app.model.model_helpers import split_train_test, vector_assembler, prepare_data
 from pyspark import SparkContext
-
+import time
 
 # ----------------------------------------------------------------------------------
 #                               MAIN FUNCTION                                     |
@@ -32,7 +32,18 @@ def parallelize_tasks(transformations, spark):
 
 def modelTuning(df, spark):
     # Step 1 and Step 2:
-    Adf_train, Adf_test, feature_cols = prepare_data(df)
+    Adf_train, Adf_test, feature_cols = prepare_data(df, spark)
+    start_time_dt = time.time()
     train_decision_tree(Adf_train, Adf_test, feature_cols, spark)
+    elapsed_time_dt = (time.time() - start_time_dt) / 60
+    print(f"Decision Tree Training Time: {elapsed_time_dt} minutes")
+
+    start_time_rf = time.time()
     train_random_forest(Adf_train, Adf_test, feature_cols, spark)
+    elapsed_time_rf = (time.time() - start_time_rf) / 60
+    print(f"Random Forest Training Time: {elapsed_time_rf} minutes")
+
+    start_time_ab = time.time()
     train_adaboost(Adf_train, Adf_test, feature_cols, spark)
+    elapsed_time_ab = (time.time() - start_time_ab) / 60
+    print(f"AdaBoost Training Time: {elapsed_time_ab} minutes")

@@ -1,13 +1,13 @@
 import sys
+
+from app.model.models import modelTuning
+
 sys.path.append("..")
 from pyspark.sql import SparkSession
 import logging
 from preprocessing import preprocess
-# from src.app.utils import read_file, unzip_file, check_delimiter
 import os
 import time
-
-from src.app.model.models import modelTuning
 
 
 def get_spark_session():
@@ -77,8 +77,10 @@ if __name__ == '__main__':
     log = logging.getLogger("pyspark")
     log.setLevel(logging.ERROR)
 
-    folder_path = '../data'
-    parquet_output_folder = '../parquet'
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    folder_path = os.path.join(current_dir, '../data')
+    parquet_output_folder = os.path.join(current_dir, '../parquet')
+
     # Create a Spark session using a utility function
     spark = get_spark_session()
     start_time = time.time()

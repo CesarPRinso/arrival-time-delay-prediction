@@ -1,12 +1,14 @@
+import os
+
 from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.evaluation import RegressionEvaluator
 import matplotlib.pyplot as plt
 
 
-def prepare_data(df):
+def prepare_data(df, spark):
     # Step 1: Split the DataFrame into into 70% for train and 30% for test
     # ----------------------------------------------------------------------
-    df_train, df_test = split_train_test(df, train_ratio=0.7)
+    df_train, df_test = split_train_test(df, train_ratio=0.7, spark=spark)
     # Check the sizes of the resulting DataFrames
     # print("Training set size:", df_train.count())
     # print("Test set size:", df_test.count())
@@ -25,8 +27,18 @@ def prepare_data(df):
     return Adf_train, Adf_test, feature_cols
 
 # Function for spliting the dataframe into 70% for train and 30% for test
-def split_train_test(dataframe, train_ratio):
+def split_train_test(dataframe, train_ratio, spark) :
     # Randomly split into train and test
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    src_dir = os.path.abspath(os.path.join(current_dir, '../../'))
+    print("src_dir")
+    print(src_dir)
+    parquet_dir = os.path.join(src_dir, 'parquet')
+    print(parquet_dir)
+    parquet_path = os.path.join(parquet_dir, 'combined_data.parquet')
+    print(parquet_path)
+    dataframe = spark.read.parquet(parquet_path)
+
     splits = dataframe.randomSplit([train_ratio, 1.0 - train_ratio], seed=7)
 
     # Obtain the dataframes od train and test
